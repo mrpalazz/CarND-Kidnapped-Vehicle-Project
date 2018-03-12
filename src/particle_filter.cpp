@@ -45,6 +45,7 @@ for (int i = 0; i < num_particles; i++){
 	particles.push_back(particle);
 	weights.push_back(1);
 
+	is_initialized = true;
 
 }
 
@@ -56,6 +57,25 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
+
+for (int i = 0; i < num_particles; i++){
+
+double new_x;
+double new_y;
+double new_theta;
+
+
+new_x = particles[i].x + velocity/yaw_rate * (sin (particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
+new_y = particles[i].y + velocity/yaw_rate * (cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
+new_theta = particles[i].theta + yaw_rate * delta_t;
+
+
+normal_distribution<double> N_x (new_x, std_pos[0]);
+normal_distribution<double> N_y (new_y, std_pos[1]);
+normal_distribution<double> N_theta (new_theta, std_pos[2]);
+
+std::cout << "X_new is: " << new_x << "     Y_new is: " << new_y << "     theta_new is: " << new_theta << std::endl;
+}
 
 }
 
