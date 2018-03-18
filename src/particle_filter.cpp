@@ -58,23 +58,38 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
 
-for (int i = 0; i < num_particles; i++){
+default_random_engine gen;
 
-double new_x;
-double new_y;
-double new_theta;
+for (int i = 0; i < num_particles; i++)
+{
+
+	double new_x;
+	double new_y;
+	double new_theta;
+
+	if (yaw_rate == 0){
+		new_x = particles[i].x + velocity * delta_t * cos(particles[i].theta);
+		new_y = particles[i].y + velocity * delta_t * sin(particles[i].theta);
+		new_theta = particles[i].theta;
+	}
+
+	else{
+		new_x = particles[i].x + velocity/yaw_rate * (sin (particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
+		new_y = particles[i].y + velocity/yaw_rate * (cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
+		new_theta = particles[i].theta + yaw_rate * delta_t;
+	}
+
+	normal_distribution<double> N_x (new_x, std_pos[0]);
+	normal_distribution<double> N_y (new_y, std_pos[1]);
+	normal_distribution<double> N_theta (new_theta, std_pos[2]);
+
+	particles[i].x 		= N_x(gen);
+	particles[i].y 		= N_y(gen);
+	particles[i].theta  = N_theta(gen);
+
+	std::cout << "X_new is: " << new_x << "     Y_new is: " << new_y << "     theta_new is: " << new_theta << std::endl;
 
 
-new_x = particles[i].x + velocity/yaw_rate * (sin (particles[i].theta + yaw_rate * delta_t) - sin(particles[i].theta));
-new_y = particles[i].y + velocity/yaw_rate * (cos(particles[i].theta) - cos(particles[i].theta + yaw_rate * delta_t));
-new_theta = particles[i].theta + yaw_rate * delta_t;
-
-
-normal_distribution<double> N_x (new_x, std_pos[0]);
-normal_distribution<double> N_y (new_y, std_pos[1]);
-normal_distribution<double> N_theta (new_theta, std_pos[2]);
-
-std::cout << "X_new is: " << new_x << "     Y_new is: " << new_y << "     theta_new is: " << new_theta << std::endl;
 }
 
 }
@@ -84,6 +99,42 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
 	//   implement this method and use it as a helper during the updateWeights phase.
+
+	for (unsigned int i = 0; i < observations.size(); i++)
+	{
+
+		//populate the current observation
+		LandmarkObs obs = observations[i];
+
+		// init minimum distance to maximum possible
+    	double min_dist = numeric_limits<double>::max();
+
+		int map_id = -1;
+
+		for (unsigned int j = 0; j < predicted.size(); j++){
+
+			LandmarkObs pred = predicted[j];
+
+			double distance = dist( obs.x, obs.y, pred.x, pred.y);
+			std::cout << "the calculated distance to the ladmark is: " << distance << std::endl;
+
+
+			if (distance < min_dist){
+
+				min_dist = distance;
+				map_id = pred.id;
+			}
+		}
+
+    // set the observation's id to the nearest predicted landmark's id
+    observations[i].id = map_id;
+
+
+
+		//std::cout << obs << std::endl;
+
+
+	}
 
 }
 
