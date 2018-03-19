@@ -87,7 +87,7 @@ for (int i = 0; i < num_particles; i++)
 	particles[i].y 		= N_y(gen);
 	particles[i].theta  = N_theta(gen);
 
-	std::cout << "X_new is: " << new_x << "     Y_new is: " << new_y << "     theta_new is: " << new_theta << std::endl;
+	std::cout << "X_new is: " << new_x << "     Y_new is: " << new_y << "   theta_new is: " << new_theta << std::endl;
 
 
 }
@@ -115,23 +115,21 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 
 			LandmarkObs pred = predicted[j];
 
+			//Calculate the distance to the landmark
 			double distance = dist( obs.x, obs.y, pred.x, pred.y);
-			std::cout << "the calculated distance to the ladmark is: " << distance << std::endl;
+			//std::cout << "the calculated distance to the ladmark is: " << distance << std::endl;
 
 
 			if (distance < min_dist){
 
 				min_dist = distance;
+				//This is the Map ID with the closest calculated distance to the particle
 				map_id = pred.id;
 			}
 		}
 
     // set the observation's id to the nearest predicted landmark's id
     observations[i].id = map_id;
-
-
-
-		//std::cout << obs << std::endl;
 
 
 	}
@@ -150,12 +148,62 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+
+	//Get each of the particles coordinates
+	for (unsigned int i = 0; i < num_particles; i++){
+
+		double x_particle 		= particles[i].x;
+		double y_particle 		= particles[i].y;
+		double theta_particle	= particles[i].theta;
+
+		// create a vector to hold the map landmark locations predicted to be within sensor range of the particle
+		std:vector<LandmarkObs> predictions;
+
+		//Iterate through all of the landmark locations and calculate
+		for (unsigned int j = 0; j < map_landmarks.landmark_list.size(); j++ ){
+
+			float lm_x  = map_landmarks.landmark_list[j].x_f;
+			float lm_y  = map_landmarks.landmark_list[j].y_f;
+			int   lm_id = map_landmarks.landmark_list[j].id_i; 
+
+			
+			//if the landmark is within sensor range of the particle
+			if (dist(lm_x, x_particle, lm_y, y_particle) <= sensor_range){
+				
+				//generate and store a list of these landmarks
+				predictions.push_back(LandmarkObs{ lm_id, lm_x, lm_y});
+			}
+
+		//create and store a list of the particles with state transformed from vehicle coords to particle coords
+		vector<LandmarkObs> transform_os;
+
+		for (unsigned int j = 0; j < observations.size(); j++ ){
+
+			float x_m = observations[j].x * cos(theta_particle) - observations[j].y * sin(theta_particle);
+			float y_m = observations[j].x * sin(theta_particle) + observations[j].y * cos(theta_particle);
+
+
+			transform_os.push_back(LandmarkObs{ observations[j].id, x_m, y_m});
+
+		}
+
+    	// perform dataAssociation for the predictions and transformed observations on current particle
+    	dataAssociation(predictions, transform_os);
+
+
+	}
+
+}
+
 }
 
 void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
+
+
+
 
 }
 
